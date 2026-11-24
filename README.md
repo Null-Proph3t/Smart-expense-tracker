@@ -1,286 +1,270 @@
-<<<<<<< HEAD
 # Smart Expense Pattern Analyzer
 
-A robust, enterprise-grade personal financial analytics platform engineered to automatically parse, categorize, analyze, and visualize daily expenditures with mathematical precision and actionable intelligence.
+**A zero-cloud, high-precision personal financial analytics platform built with Java 26, Spring Boot 4.0, an embedded file-based H2 database, and a lightweight modular ES6 frontend.**
 
-Built strictly according to master software engineering specifications: pure Java 26, Spring Boot 4.0.x, persistent file-based H2 database, modular ES6 JavaScript, and an offline-vendored Chart.js dashboard adhering to an ultra-clean monochromatic design system.
+Smart Expense Pattern Analyzer turns raw daily transactions into structured budgets, spending anomaly alerts, and Month-over-Month (MoM) financial trends—running 100% locally with zero external cloud dependencies, zero Node.js/npm build overhead, and exact decimal arithmetic.
 
 ---
 
 ## Table of Contents
 
-1. [Project Overview](#project-overview)
-2. [Problem Statement](#problem-statement)
-3. [Objectives](#objectives)
-4. [Technology Stack](#technology-stack)
-5. [Architecture & Design System](#architecture--design-system)
-6. [Package Structure](#package-structure)
+1. [Why This Project Exists (Problem & Solution)](#why-this-project-exists-problem--solution)
+2. [Core Capabilities](#core-capabilities)
+3. [Quick Start (Windows)](#quick-start-windows)
+4. [System Architecture & Data Flow](#system-architecture--data-flow)
+5. [Technology Stack](#technology-stack)
+6. [Project Structure](#project-structure)
 7. [Database Schema & Persistence](#database-schema--persistence)
-8. [Categorization Logic](#categorization-logic)
-9. [Analytics & Pattern Recognition Engine](#analytics--pattern-recognition-engine)
-10. [REST API Reference](#rest-api-reference)
-11. [Windows Setup Instructions](#windows-setup-instructions)
-12. [Execution Instructions](#execution-instructions)
-13. [Testing Instructions](#testing-instructions)
-14. [Reset Database & Demo Data Procedure](#reset-database--demo-data-procedure)
-15. [Verification Results](#verification-results)
-16. [Future Enhancements](#future-enhancements)
+8. [Rule-Based Categorization Engine](#rule-based-categorization-engine)
+9. [Analytics & Financial Math Engine](#analytics--financial-math-engine)
+10. [Monochromatic Design System](#monochromatic-design-system)
+11. [REST API Reference](#rest-api-reference)
+12. [Testing & Verification](#testing--verification)
+13. [Resetting the Database & Demo Data](#resetting-the-database--demo-data)
+14. [Future Enhancements](#future-enhancements)
+15. [License](#license)
 
 ---
 
-## Project Overview
+## Why This Project Exists (Problem & Solution)
 
-The **Smart Expense Pattern Analyzer** is an end-to-end financial analytics application designed for individuals seeking complete clarity over their spending patterns. It transforms disorganized transaction records into structured, actionable financial insights without relying on third-party cloud aggregators or external telemetry.
+Most lightweight expense trackers break down in real-world usage due to five common engineering shortcuts. This project is designed specifically to eliminate each one:
 
-Key highlights:
-- **Zero Cloud Leaks / 100% Offline**: Operates fully offline on local file-based storage. Zero external CDN dependencies, zero npm or Node.js runtime requirements.
-- **Rule-Based Natural Language Categorization**: Evaluates transaction descriptions against boundary-aware regex rules in strict precedence order to assign canonical categories automatically.
-- **Strict Monetary Precision**: Uses `java.math.BigDecimal` (scale 2, `HALF_UP` rounding) for all monetary arithmetic. Prohibits floating-point representation (`double`/`float`) across entities, services, DTOs, and calculations.
-- **Intelligent Financial Pattern Recognition**: Detects category-wise unusual spending anomalies (`> 2 × category average`), tracks Month-over-Month (MoM) budget changes with safe division guards, computes daily expenditure burn rates, and generates dynamic natural-language recommendations.
-- **Monochromatic Financial Dashboard**: Implements a high-density, professional aesthetic (`#FFFFFF` canvas, `#F8F8F8` surfaces, `#EAEAEA` borders, `#111111` primary typography) with stepped grayscale Chart.js visualizations.
-
----
-
-## Problem Statement
-
-Modern individuals execute tens to hundreds of digital transactions every month across UPI, debit/credit cards, net banking, and cash. However:
-1. **Manual Logging Friction**: Categorizing every coffee, commute, or grocery bill manually causes tracking fatigue and eventual abandonment.
-2. **False Substring Matching**: Naive keyword search engines categorize a `"Business lunch"` as *Transportation* (due to `"bus"`) or `"Parental care"` as *Bills* (due to `"rent"`).
-3. **Floating-Point Imprecision**: Budgeting apps using IEEE 754 `float`/`double` accumulate rounding errors, leading to balancing discrepancies and corrupted balances.
-4. **Superficial Analytics**: Most tools display static pie charts without context, failing to flag anomalous spikes or compute realistic daily burn rates.
-5. **Bloated Frontend Frameworks**: Simple dashboards often pull in gigabytes of `node_modules` and require complex build steps, reducing auditability and long-term maintainability.
-
-The Smart Expense Pattern Analyzer solves these challenges by combining a high-performance Spring Boot backend with a lightweight, zero-dependency vanilla ES6 frontend.
+| Common Failure Point | Impact on Users | How Smart Expense Pattern Analyzer Solves It |
+| :--- | :--- | :--- |
+| **Manual Categorization Fatigue** | Logging every coffee, UPI transfer, or grocery bill manually leads to abandonment. | **Automated Regex Classification**: Evaluates transaction descriptions against priority-ordered rules on creation. |
+| **Naive Substring Matching** | Simple `.contains()` checks misclassify `"Business lunch"` as *Transportation* (`"bus"`) or `"Parental care"` as *Bills* (`"rent"`). | **Whole-Word Boundary Matching (`\b`)**: Enforces strict word boundaries and deterministic category precedence. |
+| **Floating-Point Rounding Drift** | Using `double` or `float` (IEEE 754) introduces binary representation errors in sums and percentages. | **Strict `BigDecimal` Arithmetic**: Uses `NUMERIC(12, 2)` and `RoundingMode.HALF_UP` end-to-end across entities, DTOs, and services. |
+| **Static, Context-Free Charts** | Basic pie charts show *where* money went without flagging spikes or pacing. | **Pattern Recognition Engine**: Flags anomalies (`> 2x` category average), computes daily burn rates, and tracks MoM shifts. |
+| **Bloated Frontend Toolchains** | Heavy SPA frameworks pull in gigabytes of `node_modules` and external CDNs. | **Zero-Build Vanilla ES6 + Vendored Chart.js**: Native browser modules (`type="module"`) with offline-vendored Chart.js `4.4.1`. |
 
 ---
 
-## Objectives
+## Core Capabilities
 
-- **Automated Ingestion & Classification**: Automatically assign one of nine canonical expense categories using regex whole-word boundary matching (`\b`), while allowing manual override when desired.
-- **Rigorous Budget Management**: Allow users to allocate monthly budgets per category, enforce uniqueness per month/year, and dynamically track utilization (`WITHIN_BUDGET`, `APPROACHING_LIMIT` at 80%–100%, and `EXCEEDED` over 100%).
-- **Advanced Trend Analytics**: Compute historical expenditure trends, Month-over-Month percentage shifts, and category-level percentage shares.
-- **Anomaly Detection**: Flag unusual transactions where an expense exceeds twice the category average (with at least 2 historical transactions in that category).
-- **Responsive Single-Page Application (SPA)**: Deliver 5 specialized views (Dashboard, Transactions, Analytics, Monthly Reports, Budget) that communicate seamlessly with REST endpoints.
+- **100% Local & Offline-First**: Persists data to a local H2 file database (`~/.smart-expense-analyzer/db.mv.db`). No external APIs, telemetry, or CDN requests.
+- **Deterministic Auto-Categorization**: Classifies transactions into 9 canonical categories using whole-word regular expressions, while preserving manual category overrides during creation or edits.
+- **Monthly Budget Guardrails**: Enforces one budget limit per category per month/year and evaluates live utilization across three states: `WITHIN_BUDGET`, `APPROACHING_LIMIT` (`80%–100%`), and `EXCEEDED` (`> 100%`).
+- **Statistical & Behavioral Insights**:
+  - Identifies single-transaction anomalies exceeding twice the category average (once a category has at least 2 transactions).
+  - Computes Month-over-Month (MoM) spending changes with safe zero-denominator handling.
+  - Calculates adaptive daily burn rates (elapsed days for the active month vs. total calendar days for completed months).
+- **5-View Single-Page Application (SPA)**: Seamless client-side navigation across **Dashboard**, **Transactions**, **Analytics**, **Monthly Reports**, and **Budget** views.
+
+---
+
+## Quick Start (Windows)
+
+### Prerequisites
+- **OS**: Windows 10 or Windows 11 (64-bit)
+- **JDK**: OpenJDK **26** or higher available on `PATH`
+- **Git**: For cloning the repository *(Apache Maven is bundled via `mvnw.cmd`—no separate Maven install required)*
+
+### 1. Verify Java & Clone
+```powershell
+java -version
+# Expected: openjdk version "26" (or higher)
+
+git clone [https://github.com/](https://github.com/)<your-username>/Smart-Expense-Analyzer.git
+cd Smart-Expense-Analyzer\backend
+```
+
+### 2. Run the Application
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+*(Alternatively, build an executable JAR with `.\mvnw.cmd package -DskipTests` and run `java -jar target/smart-expense-analyzer-1.0.0-SNAPSHOT.jar`.)*
+
+### 3. Open in Browser
+Once the console prints `Tomcat started on port 8080 (http)`:
+- **Application UI**: [http://localhost:8080/](http://localhost:8080/)
+- **H2 Database Console**: [http://localhost:8080/h2-console](http://localhost:8080/h2-console)
+  - **JDBC URL**: `jdbc:h2:file:C:\Users\<YourUsername>/.smart-expense-analyzer/db`
+  - **User Name**: `sa`
+  - **Password**: *(leave blank)*
+
+On first startup against an empty database, `DataSeeder` automatically populates **32 sample INR transactions** (spanning 4 months) and **5 active monthly budgets** so all charts and reports work immediately.
+
+---
+
+## System Architecture & Data Flow
+
+The application follows a clean three-tier Spring Boot architecture paired with a modular vanilla ES6 frontend served directly from Spring Boot's static resources.
+
+```
++-----------------------------------------------------------------------------------+
+|                                  CLIENT BROWSER                                   |
+|  Single-Page Application (HTML5 / CSS3 / Modular ES6 JavaScript - No Build Step)  |
+|                                                                                   |
+|  [Dashboard]    [Transactions]    [Analytics]    [Monthly Reports]    [Budget]    |
+|       |               |                |                 |               |        |
+|       +---------------+----------------+-----------------+---------------+        |
+|                                        |                                          |
+|                      [api.js — Centralized Fetch & INR Formatter]                 |
+|                      [charts.js — Monochrome Chart.js Renderer]                   |
++-----------------------------------------------------------------------------------+
+                                         | HTTP REST / JSON
+                                         v
++-----------------------------------------------------------------------------------+
+|                            SPRING BOOT 4.0.10 BACKEND                             |
+|                                                                                   |
+|  [REST Controllers]                                                               |
+|    ├── ExpenseController      (/api/expenses/**)                                  |
+|    ├── AnalyticsController    (/api/analytics/**)                                 |
+|    ├── BudgetController       (/api/budgets/**)                                   |
+|    └── GlobalExceptionHandler (@RestControllerAdvice -> Structured JSON Errors)   |
+|                                                                                   |
+|  [Domain Services]                                                                |
+|    ├── CategorizationService  (Boundary-aware \b regex & precedence engine)       |
+|    ├── ExpenseService         (CRUD, multi-predicate filtering, sorting)          |
+|    ├── AnalyticsService       (KPIs, category shares, extrema, anomalies)         |
+|    ├── ReportService          (MoM shifts, daily burn rate, 6-month trend)        |
+|    └── BudgetService          (Utilization %, remaining balance, status rules)    |
+|                                                                                   |
+|  [Persistence Layer]                                                              |
+|    ├── ExpenseRepository      (Spring Data JPA derived & custom JPQL queries)     |
+|    └── BudgetRepository       (Unique month/year/category lookups)                |
++-----------------------------------------------------------------------------------+
+                                         | JDBC / Hibernate 7.2
+                                         v
++-----------------------------------------------------------------------------------+
+|                     EMBEDDED H2 FILE DATABASE (v2.4.240)                          |
+|                   ${user.home}/.smart-expense-analyzer/db.mv.db                   |
++-----------------------------------------------------------------------------------+
+```
+
+### How a Transaction Flows Through the System
+1. **Input**: A user submits `"Swiggy dinner order"` for `₹450.00` via `UPI` in the Transactions modal (`transactions.js`).
+2. **Validation**: `ExpenseController` validates the payload via Jakarta Bean Validation (`@NotBlank`, `@DecimalMin("0.01")`, `@NotNull`).
+3. **Classification**: Because `category` is omitted/`null`, `ExpenseService` delegates to `CategorizationService`, which matches `\bswiggy\b` and `\bdinner\b` and assigns `FOOD`.
+4. **Persistence**: `ExpenseRepository` saves the normalized `BigDecimal` (`450.00`) to `db.mv.db`.
+5. **Recomputation**: Subsequent dashboard or budget queries dynamically recalculate category shares, daily burn rates, anomaly thresholds, and `FOOD` budget utilization.
 
 ---
 
 ## Technology Stack
 
-| Layer | Technology | Specification / Version | Rationale |
+| Layer | Technology | Version / Spec | Purpose |
 | :--- | :--- | :--- | :--- |
-| **Language Runtime** | Java SE | OpenJDK **26** (`<release>26</release>`) | Next-generation language features, modern record types, and garbage collection efficiency. |
-| **Backend Framework** | Spring Boot | **4.0.10** | Spring Framework 7, Jakarta EE 11 baseline, high-throughput embedded Tomcat 11. |
-| **Persistence / ORM** | Spring Data JPA / Hibernate | **7.2.25.Final** / Jakarta Persistence 3.2 | Strongly-typed repository abstractions and declarative transaction management. |
-| **Database** | H2 Database Engine | **2.4.240** (Embedded File Mode) | Zero-install, file-persisted ACID compliance at `${user.home}/.smart-expense-analyzer/db`. |
-| **Validation** | Jakarta Bean Validation | Hibernate Validator **9.0.3.Final** | Standard `@NotNull`, `@NotBlank`, `@DecimalMin("0.01")`, `@Min`, `@Max` constraints. |
-| **Build & Tooling** | Apache Maven | Maven Wrapper **3.3.4** (`distributionType=only-script`) | Hermetic, reproducible builds across developer environments. |
-| **Testing** | JUnit 5 & Mockito | JUnit Jupiter **5.11+** / Boot 4 Test Starters, AssertJ | Comprehensive unit, parameterized, MockMvc, and `@SpringBootTest` integration tests. |
-| **Frontend UI** | Vanilla HTML5 / CSS3 | Modern CSS Flexbox & Grid | Native browser execution without bundlers, Webpack, or Babel. |
-| **Frontend Scripting** | Modular ES6 JavaScript | Native Browser Modules (`type="module"`) | Encapsulated API, chart, modal, and view modules. Zero npm runtime. |
-| **Data Visualization**| Chart.js (Vendored UMD) | **4.4.1** (`chart.umd.min.js`) | Offline, high-performance canvas chart rendering with monochrome stepped palettes. |
+| **Language** | Java SE | OpenJDK **26** (`<release>26</release>`) | Modern Java runtime with records and improved GC performance. |
+| **Framework** | Spring Boot | **4.0.10** | Spring Framework 7, Jakarta EE 11 baseline, embedded Tomcat 11. |
+| **ORM / JPA** | Spring Data JPA / Hibernate | **7.2.25.Final** (Jakarta Persistence 3.2) | Repository abstractions and transactional persistence. |
+| **Database** | H2 Database Engine | **2.4.240** (Embedded File Mode) | Zero-setup, ACID-compliant local file persistence. |
+| **Validation** | Hibernate Validator | **9.0.3.Final** | Declarative request DTO validation (`@Valid`). |
+| **Build Tool** | Apache Maven Wrapper | **3.3.4** (`only-script`, Maven `3.9.16`) | Reproducible builds and test execution without global Maven setup. |
+| **Testing** | JUnit 5, Mockito, AssertJ | JUnit Jupiter **5.11+** / Boot 4 Test | Unit, parameterized, MockMvc, and `@SpringBootTest` integration tests. |
+| **Frontend** | HTML5, CSS3, ES6 Modules | Native Browser Standards | Zero-bundler SPA using Flexbox, Grid, and `type="module"`. |
+| **Charts** | Chart.js (Vendored UMD) | **4.4.1** (`chart.umd.min.js`) | Locally bundled canvas charting with stepped grayscale palettes. |
 
 ---
 
-## Architecture & Design System
+## Project Structure
 
-### Architectural Overview
-
-```
-+---------------------------------------------------------------------------------+
-|                                CLIENT BROWSER                                   |
-|  Single-Page Application (HTML5 / Vanilla CSS3 / Modular ES6 JavaScript)       |
-|                                                                                 |
-|  [Dashboard View]  [Transactions View]  [Analytics]  [Monthly Reports]  [Budget]|
-|         |                   |                |               |              |   |
-|         +-------------------+----------------+---------------+--------------+   |
-|                                     |                                           |
-|                     [api.js (Centralized Fetch Client)]                         |
-|                     [charts.js (Monochrome Chart Engine)]                       |
-+---------------------------------------------------------------------------------+
-                                      | HTTP REST / JSON
-                                      v
-+---------------------------------------------------------------------------------+
-|                           SPRING BOOT 4.0 BACKEND                               |
-|                                                                                 |
-|  [REST Controllers Layer]                                                       |
-|    - ExpenseController      (/api/expenses/**)                                  |
-|    - AnalyticsController    (/api/analytics/**)                                 |
-|    - BudgetController       (/api/budgets/**)                                   |
-|    - GlobalExceptionHandler (@RestControllerAdvice -> Structured Error DTO)       |
-|                                                                                 |
-|  [Domain Services Layer]                                                        |
-|    - CategorizationService  (Regex \b whole-word matching & priority rules)     |
-|    - ExpenseService         (CRUD, combined multi-predicate filter, sort)       |
-|    - AnalyticsService       (KPIs, percentages, extrema, anomalies, insights)   |
-|    - ReportService          (MoM calculation, daily burn, historical trend)     |
-|    - BudgetService          (Threshold evaluation, utilization, remaining)      |
-|                                                                                 |
-|  [Data Access Layer]                                                            |
-|    - ExpenseRepository      (Spring Data JPA / Derived & JPQL Queries)          |
-|    - BudgetRepository       (Unique constraint queries per month/year)          |
-|                                                                                 |
-|  [Database Engine]                                                              |
-|    - Embedded H2 File DB    (~/.smart-expense-analyzer/db.mv.db)                |
-+---------------------------------------------------------------------------------+
-```
-
-### Monochromatic Design System
-
-The user interface follows a strict high-contrast financial palette:
-
-| Element | Hex Code | Purpose |
-| :--- | :--- | :--- |
-| **Canvas Background** | `#FFFFFF` | Primary viewport background. |
-| **Surface / Card Background** | `#F8F8F8` | Metric tiles, ledger table container, modal surface. |
-| **Hairline Borders** | `#EAEAEA` | 1px clean separators for table rows, inputs, and card borders. |
-| **Muted Text / Metadata** | `#888888` | Table headers, secondary timestamps, helper captions. |
-| **Secondary Typography** | `#333333` | Table values, filter labels, descriptive paragraphs. |
-| **Primary Typography** | `#111111` | Header titles, numerical KPI card values, primary buttons. |
-| **Chart Steps (Monochrome)** | `#111111`, `#333333`, `#555555`, `#777777`, `#999999`, `#BBBBBB`, `#D8D8D8` | Stepped grayscale shading across categories in doughnut and bar charts. |
-
----
-
-## Package Structure
-
-```
+```text
 Smart-Expense-Analyzer/
-|-- backend/
-|   |-- pom.xml                                   # Java 26 & Spring Boot 4.0.10 build config
-|   |-- mvnw.cmd / mvnw                           # Maven Wrapper scripts (distributionType=only-script)
-|   |-- .mvn/wrapper/maven-wrapper.properties     # Maven 3.9.16 wrapper configuration
-|   `-- src/
-|       |-- main/
-|       |   |-- java/com/expenseanalyzer/
-|       |   |   |-- SmartExpenseAnalyzerApplication.java   # Spring Boot entry point
-|       |   |   |-- config/
-|       |   |   |   `-- DataSeeder.java                    # ApplicationRunner initial seed loader
-|       |   |   |-- controller/
-|       |   |   |   |-- AnalyticsController.java           # /api/analytics endpoints
-|       |   |   |   |-- BudgetController.java              # /api/budgets endpoints
-|       |   |   |   `-- ExpenseController.java             # /api/expenses endpoints
-|       |   |   |-- dto/
-|       |   |   |   |-- AnalyticsSummaryDTO.java
-|       |   |   |   |-- BudgetRequestDTO.java
-|       |   |   |   |-- BudgetStatusDTO.java
-|       |   |   |   |-- CategorySummaryDTO.java
-|       |   |   |   |-- ErrorResponseDTO.java
-|       |   |   |   |-- ExpenseHighlightDTO.java
-|       |   |   |   |-- ExpenseRequestDTO.java
-|       |   |   |   |-- ExpenseResponseDTO.java
-|       |   |   |   |-- FieldErrorDTO.java
-|       |   |   |   |-- HighestLowestResponseDTO.java
-|       |   |   |   |-- InsightsResponseDTO.java
-|       |   |   |   |-- MonthlyReportDTO.java
-|       |   |   |   |-- MonthlyTrendPointDTO.java
-|       |   |   |   `-- UnusualExpenseDTO.java
-|       |   |   |-- exception/
-|       |   |   |   |-- DuplicateResourceException.java    # HTTP 409
-|       |   |   |   |-- GlobalExceptionHandler.java        # Centralized @RestControllerAdvice
-|       |   |   |   `-- ResourceNotFoundException.java     # HTTP 404
-|       |   |   |-- model/
-|       |   |   |   |-- Budget.java                        # JPA Entity for category limits
-|       |   |   |   |-- BudgetStatus.java                  # Enum: WITHIN_BUDGET, APPROACHING_LIMIT, EXCEEDED
-|       |   |   |   |-- Expense.java                       # JPA Entity for transactions
-|       |   |   |   |-- ExpenseCategory.java               # Enum: 9 canonical categories
-|       |   |   |   `-- PaymentMethod.java                 # Enum: CASH, UPI, CARD, OTHER
-|       |   |   |-- repository/
-|       |   |   |   |-- BudgetRepository.java
-|       |   |   |   `-- ExpenseRepository.java
-|       |   |   `-- service/
-|       |   |       |-- AnalyticsService.java              # KPIs, percentages, anomalies, insights
-|       |   |       |-- BudgetService.java                 # Budget threshold evaluation & CRUD
-|       |   |       |-- CategorizationService.java         # Rule-based whole-word regex matching
-|       |   |       |-- ExpenseService.java                # Transaction CRUD, filtering, sorting
-|       |   |       `-- ReportService.java                 # MoM trends, daily average burn
-|       |   `-- resources/
-|       |       |-- application.properties                 # H2 file persistence, server config
-|       |       `-- static/                                # Zero-install static web assets
-|       |           |-- index.html                         # Responsive Single Page Application shell
-|       |           |-- css/styles.css                     # High-density monochromatic design system
-|       |           `-- js/
-|       |               |-- api.js                         # Centralized fetch wrapper & INR formatters
-|       |               |-- charts.js                      # Chart.js monochrome renderer
-|       |               |-- dashboard.js                   # Dashboard KPIs & live widgets
-|       |               |-- transactions.js                # Ledger table, filter, sort, modal CRUD
-|       |               |-- reports.js                     # Analytics breakdown & monthly reports
-|       |               |-- budget.js                      # Budget tracking & utilization gauges
-|       |               `-- vendor/
-|       |                   `-- chart.umd.min.js           # Locally vendored Chart.js 4.4.1
-|       `-- test/
-|           |-- java/com/expenseanalyzer/
-|           |   |-- SmartExpenseAnalyzerIntegrationTest.java # SpringBootTest E2E & persistence tests
-|           |   |-- controller/
-|           |   |   |-- AnalyticsControllerTest.java       # Standalone MockMvc REST tests
-|           |   |   |-- BudgetControllerTest.java          # Standalone MockMvc REST tests
-|           |   |   `-- ExpenseControllerTest.java         # Standalone MockMvc REST tests
-|           |   `-- service/
-|           |       |-- AnalyticsServiceTest.java          # Edge cases, empty dataset, precision
-|           |       |-- BudgetServiceTest.java             # Threshold boundaries (79.99, 80.00, 100.00, 100.01)
-|           |       |-- CategorizationServiceTest.java     # Precedence, \b boundary, case insensitivity
-|           |       |-- ExpenseServiceTest.java            # Multi-predicate filtering & sorting
-|           |       `-- ReportServiceTest.java             # MoM zero denominator & leap year burn
-|           `-- resources/
-|               `-- application.properties                 # In-memory H2 config for test isolation
-|-- ARCHITECTURE.md                                        # Master architecture document
-|-- IMPLEMENTATION_PLAN.md                                 # Phased execution roadmap
-|-- PROJECT_STATUS.md                                      # Project status and completed milestones
-|-- TECHNICAL_DECISIONS.md                                 # Architectural rationale and trade-offs
-`-- README.md                                              # Comprehensive project documentation
+├── backend/
+│   ├── pom.xml                                        # Java 26 & Spring Boot 4.0.10 configuration
+│   ├── mvnw.cmd / mvnw                                # Maven Wrapper execution scripts
+│   ├── .mvn/wrapper/maven-wrapper.properties          # Wrapper distribution settings
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/expenseanalyzer/
+│       │   │   ├── SmartExpenseAnalyzerApplication.java   # Application entry point
+│       │   │   ├── config/
+│       │   │   │   └── DataSeeder.java                    # Idempotent initial demo data loader
+│       │   │   ├── controller/
+│       │   │   │   ├── AnalyticsController.java           # /api/analytics endpoints
+│       │   │   │   ├── BudgetController.java              # /api/budgets endpoints
+│       │   │   │   └── ExpenseController.java             # /api/expenses endpoints
+│       │   │   ├── dto/                                   # Immutable request/response records & DTOs
+│       │   │   ├── exception/
+│       │   │   │   ├── DuplicateResourceException.java    # Maps to HTTP 409 Conflict
+│       │   │   │   ├── GlobalExceptionHandler.java        # Centralized @RestControllerAdvice
+│       │   │   │   └── ResourceNotFoundException.java     # Maps to HTTP 404 Not Found
+│       │   │   ├── model/
+│       │   │   │   ├── Budget.java                        # JPA entity for monthly category limits
+│       │   │   │   ├── BudgetStatus.java                  # WITHIN_BUDGET, APPROACHING_LIMIT, EXCEEDED
+│       │   │   │   ├── Expense.java                       # JPA entity for expense transactions
+│       │   │   │   ├── ExpenseCategory.java               # 9 canonical expense categories
+│       │   │   │   └── PaymentMethod.java                 # CASH, UPI, CARD, OTHER
+│       │   │   ├── repository/
+│       │   │   │   ├── BudgetRepository.java
+│       │   │   │   └── ExpenseRepository.java
+│       │   │   └── service/
+│       │   │       ├── AnalyticsService.java              # KPIs, shares, extrema, anomalies, insights
+│       │   │       ├── BudgetService.java                 # Threshold evaluation & CRUD
+│       │   │       ├── CategorizationService.java         # Whole-word regex classification engine
+│       │   │       ├── ExpenseService.java                # Transaction CRUD, filtering & sorting
+│       │   │       └── ReportService.java                 # MoM trends & daily burn calculations
+│       │   └── resources/
+│       │       ├── application.properties                 # H2 file config & server properties
+│       │       └── static/
+│       │           ├── index.html                         # 5-view SPA shell
+│       │           ├── css/styles.css                     # High-contrast monochromatic stylesheet
+│       │           └── js/
+│       │               ├── api.js                         # REST fetch wrapper & INR currency helpers
+│       │               ├── charts.js                      # Monochrome Chart.js configuration
+│       │               ├── dashboard.js                   # KPI cards & recent activity view
+│       │               ├── transactions.js                # Filterable ledger & add/edit modal
+│       │               ├── reports.js                     # Category analytics & monthly reports
+│       │               ├── budget.js                      # Budget creation & utilization bars
+│       │               └── vendor/chart.umd.min.js        # Offline Chart.js 4.4.1 bundle
+│       └── test/
+│           ├── java/com/expenseanalyzer/
+│           │   ├── SmartExpenseAnalyzerIntegrationTest.java # End-to-end @SpringBootTest suite
+│           │   ├── controller/                            # Standalone MockMvc REST tests
+│           │   └── service/                               # Unit & edge-case service tests
+│           └── resources/
+│               └── application.properties                 # Isolated in-memory H2 test config
+├── ARCHITECTURE.md                                    # Master architectural blueprint
+├── IMPLEMENTATION_PLAN.md                             # Phased build roadmap
+├── PROJECT_STATUS.md                                  # Milestone completion log
+├── TECHNICAL_DECISIONS.md                             # Engineering trade-offs & rationale
+└── README.md                                          # Project documentation
 ```
 
 ---
 
 ## Database Schema & Persistence
 
-### Storage Mode
-The application uses an embedded **H2 Database Engine** (v2.4.240) configured in persistent file mode.
-- **Physical Path**: `${user.home}/.smart-expense-analyzer/db.mv.db`
-- **URL**: `jdbc:h2:file:${user.home}/.smart-expense-analyzer/db;DB_CLOSE_ON_EXIT=TRUE`
-- **Dialect**: `org.hibernate.dialect.H2Dialect`
-- **DDL Strategy**: `update` (preserves existing records across server restarts)
-- **H2 Web Console**: Available at `http://localhost:8080/h2-console` (restricted to `localhost`).
+### Storage Configuration
+- **Database File**: `${user.home}/.smart-expense-analyzer/db.mv.db`
+- **JDBC URL**: `jdbc:h2:file:${user.home}/.smart-expense-analyzer/db;DB_CLOSE_ON_EXIT=TRUE`
+- **Hibernate DDL Mode**: `update` (retains all transactions and budgets across restarts)
 
-### Table: `expenses`
-Stores individual transaction records.
-
-| Column | Type | Constraints | Description |
+### `expenses` Table
+| Column | SQL Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
-| `id` | `BIGINT` | `PRIMARY KEY AUTO_INCREMENT` | Unique expense identifier. |
-| `description` | `VARCHAR(200)` | `NOT NULL` | Description text used for classification. |
-| `amount` | `NUMERIC(12, 2)` | `NOT NULL, >= 0.01` | Transaction value in INR (BigDecimal scale 2). |
-| `date` | `DATE` | `NOT NULL` | Date of expense (`LocalDate`). |
-| `category` | `VARCHAR` | `NOT NULL` | Canonical enum value (`GROCERIES`, `FOOD`, etc.). |
-| `payment_method` | `VARCHAR` | `NOT NULL` | Enum: `CASH`, `UPI`, `CARD`, `OTHER`. |
-| `notes` | `VARCHAR(500)` | `NULLABLE` | Optional user annotations. |
+| `id` | `BIGINT` | `PRIMARY KEY AUTO_INCREMENT` | Surrogate primary key. |
+| `description` | `VARCHAR(200)` | `NOT NULL` | Merchant or item note used for auto-categorization. |
+| `amount` | `NUMERIC(12, 2)` | `NOT NULL, >= 0.01` | Exact monetary value in INR (`BigDecimal`, scale 2). |
+| `date` | `DATE` | `NOT NULL` | Transaction date (`java.time.LocalDate`). |
+| `category` | `VARCHAR` | `NOT NULL` | Canonical `ExpenseCategory` enum string. |
+| `payment_method` | `VARCHAR` | `NOT NULL` | `CASH`, `UPI`, `CARD`, or `OTHER`. |
+| `notes` | `VARCHAR(500)` | `NULLABLE` | Optional user remarks. |
 
-### Table: `budgets`
-Stores monthly allocation limits per category.
-
-| Column | Type | Constraints | Description |
+### `budgets` Table
+| Column | SQL Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
-| `id` | `BIGINT` | `PRIMARY KEY AUTO_INCREMENT` | Unique budget identifier. |
-| `category` | `VARCHAR` | `NOT NULL` | Canonical category enum. |
-| `monthly_limit` | `NUMERIC(12, 2)` | `NOT NULL, >= 0.01` | Allocated budget limit in INR. |
-| `budget_month` | `INT` | `NOT NULL, 1–12` | Calendar month (1–12). |
-| `budget_year` | `INT` | `NOT NULL, >= 2000` | Calendar year (e.g. 2026). |
+| `id` | `BIGINT` | `PRIMARY KEY AUTO_INCREMENT` | Surrogate primary key. |
+| `category` | `VARCHAR` | `NOT NULL` | Canonical `ExpenseCategory` enum string. |
+| `monthly_limit` | `NUMERIC(12, 2)` | `NOT NULL, >= 0.01` | Target spending cap in INR (`BigDecimal`, scale 2). |
+| `budget_month` | `INT` | `NOT NULL, 1–12` | Calendar month (`1` = January, `12` = December). |
+| `budget_year` | `INT` | `NOT NULL, >= 2000` | Four-digit calendar year (e.g., `2026`). |
 
-**Unique Constraint**:
+**Composite Unique Constraint**:
 ```sql
 CONSTRAINT uq_budget_category_month_year UNIQUE (category, budget_month, budget_year)
 ```
-Prevents duplicate budget allocations for the same category in the same month and year.
+Guarantees that only one budget limit can exist for a given category within the same month and year. Attempting to create a duplicate returns `HTTP 409 Conflict`.
 
 ---
 
-## Categorization Logic
+## Rule-Based Categorization Engine
 
-Categorization is handled entirely inside `CategorizationService` using regular expressions compiled with case-insensitivity (`Pattern.CASE_INSENSITIVE`) and whole-word boundaries (`\b<keyword>\b`).
+`CategorizationService` evaluates descriptions top-to-bottom using precompiled, case-insensitive regular expressions wrapped in word boundaries (`\b<keyword>\b`). The first matching rule wins.
 
-### Precedence Hierarchy & Keyword Rules
-
-Rules are evaluated sequentially from top to bottom. The first matching category is returned immediately:
-
-| Priority | Category Enum | Display Label | Keyword Regex List (`\b<keyword>\b`) |
+| Priority | Category Enum | UI Display Name | Matched Whole-Word Keywords (`\b...\b`) |
 | :---: | :--- | :--- | :--- |
 | **1** | `GROCERIES` | Groceries | `vegetables`, `grocery`, `groceries`, `milk`, `fruits`, `supermarket`, `bigbasket`, `blinkit`, `zepto` |
 | **2** | `FOOD` | Food | `restaurant`, `pizza`, `coffee`, `cafe`, `lunch`, `dinner`, `breakfast`, `burger`, `zomato`, `swiggy` |
@@ -290,59 +274,81 @@ Rules are evaluated sequentially from top to bottom. The first matching category
 | **6** | `BILLS_AND_UTILITIES` | Bills & Utilities | `electricity`, `internet`, `wifi`, `rent`, `water`, `broadband`, `recharge`, `bill` |
 | **7** | `ENTERTAINMENT` | Entertainment | `netflix`, `cinema`, `movies`, `movie`, `spotify`, `concert`, `gaming` |
 | **8** | `SHOPPING` | Shopping | `amazon`, `flipkart`, `clothing`, `clothes`, `shoes`, `electronics`, `mall` |
-| **9** | `OTHERS` | Others | *Fallback for unmatched descriptions, null, empty, or whitespace.* |
+| **9** | `OTHERS` | Others | *Default fallback when no keywords match, or input is null/blank.* |
 
-### Boundary Verification Examples
-- `"Business lunch with partner"`: `"bus"` does not match because of `\b` boundaries; `"lunch"` matches `FOOD`. Result: **FOOD**.
-- `"Amazon Grocery delivery"`: Both `"amazon"` and `"grocery"` are present; `GROCERIES` has higher precedence than `SHOPPING`. Result: **GROCERIES**.
-- `"Parental health checkup"`: `"rent"` does not match `"parental"`. `"health"` is not a keyword, but if `"doctor"` or `"clinic"` is present, matches `HEALTHCARE`.
+### Why Precedence & Word Boundaries Matter
+- **`"Business lunch with partner"` $\rightarrow$ `FOOD`**: Because `\bbus\b` enforces word boundaries, `"Business"` does not falsely trigger `TRANSPORTATION`; `\blunch\b` matches `FOOD`.
+- **`"Amazon Grocery delivery"` $\rightarrow$ `GROCERIES`**: Both `"amazon"` and `"grocery"` are present, but `GROCERIES` (Priority 1) is evaluated before `SHOPPING` (Priority 8).
+- **`"Automobile service"` $\rightarrow$ `OTHERS`**: `\bauto\b` does not match `"Automobile"`, preventing false positives.
 
 ---
 
-## Analytics & Pattern Recognition Engine
+## Analytics & Financial Math Engine
 
-All statistical and analytical calculations use `BigDecimal` with `RoundingMode.HALF_UP`.
+Every calculation in `AnalyticsService`, `ReportService`, and `BudgetService` uses `java.math.BigDecimal` with `RoundingMode.HALF_UP` to preserve exact 2-decimal precision.
 
 ### 1. Unusual Spending Anomaly Detection
-An expense is flagged as unusual if:
+An expense is flagged as an anomaly when:
+
 $$\text{amount} > 2.0 \times \overline{X}_{\text{category}}$$
-**Pre-condition**: The category must have at least $N \ge 2$ historical transactions. Single transactions are never flagged.
+
+- **Minimum Sample Guard ($N \ge 2$)**: A category must contain at least 2 recorded expenses before any transaction can be flagged. A single isolated transaction is never falsely marked as an anomaly against itself.
 
 ### 2. Month-over-Month (MoM) Percentage Shift
-$$\text{MoM Change \%} = \frac{\text{Total}_{\text{current}} - \text{Total}_{\text{previous}}}{\text{Total}_{\text{previous}}} \times 100$$
-**Zero-Denominator Guard**: If $\text{Total}_{\text{previous}} = 0$, the calculation safely returns `null` (rendered as `"N/A"` in the UI) to avoid division by zero or misleading `+∞%` indicators.
 
-### 3. Average Daily Burn Rate
-$$\text{Daily Burn} = \frac{\text{Total Month Expenditure}}{\text{Days Considered}}$$
-- **Current Calendar Month**: Divides by `LocalDate.now().getDayOfMonth()` (e.g. on the 24th of November, divides by 24).
-- **Past Calendar Month**: Divides by `YearMonth.lengthOfMonth()` (e.g., 31 for October, 28/29 for February).
+$$\text{MoM Change \%} = \frac{\text{Total}_{\text{current}} - \text{Total}_{\text{previous}}}{\text{Total}_{\text{previous}}} \times 100$$
+
+- **Zero-Denominator Guard**: When $\text{Total}_{\text{previous}} = 0$, the API returns `null` (displayed as `N/A` in the UI) rather than throwing an `ArithmeticException` or displaying a misleading infinite percentage.
+
+### 3. Adaptive Daily Burn Rate
+
+$$\text{Daily Burn} = \frac{\text{Total Month Expenditure}}{\text{Days Elapsed}}$$
+
+- **Active Current Month**: Divides by `LocalDate.now().getDayOfMonth()` so the burn rate reflects actual daily pacing so far this month.
+- **Completed Past Months**: Divides by `YearMonth.lengthOfMonth()` (accounting accurately for 28-, 29-, 30-, and 31-day months).
 
 ### 4. Budget Utilization & Status Thresholds
-$$\text{Utilization \%} = \frac{\text{Actual Spent}}{\text{Monthly Limit}} \times 100$$
-$$\text{Remaining Amount} = \text{Monthly Limit} - \text{Actual Spent}$$
 
-Threshold boundaries:
-- $\text{Utilization} < 80.00\% \implies$ `WITHIN_BUDGET` (Neutral status)
-- $80.00\% \le \text{Utilization} \le 100.00\% \implies$ `APPROACHING_LIMIT` (Warning indicator)
-- $\text{Utilization} > 100.00\% \implies$ `EXCEEDED` (Alert indicator; `Remaining Amount` is negative)
+$$\text{Utilization \%} = \frac{\text{Actual Spent}}{\text{Monthly Limit}} \times 100 \qquad \text{Remaining} = \text{Monthly Limit} - \text{Actual Spent}$$
+
+| Utilization Range | Status Enum | Meaning |
+| :--- | :--- | :--- |
+| `< 80.00%` | `WITHIN_BUDGET` | Spending is comfortably within the allocated cap. |
+| `80.00% – 100.00%` | `APPROACHING_LIMIT` | Warning zone; budget is nearly or fully utilized. |
+| `> 100.00%` | `EXCEEDED` | Over budget; `Remaining` becomes a negative deficit value. |
+
+---
+
+## Monochromatic Design System
+
+The frontend avoids visual clutter in favor of a high-contrast, Swiss-inspired financial ledger aesthetic:
+
+| Token Role | Hex Value | Usage |
+| :--- | :--- | :--- |
+| **Canvas** | `#FFFFFF` | Primary page background. |
+| **Elevated Surface** | `#F8F8F8` | Metric tiles, table wrappers, and modal dialogs. |
+| **Hairline Border** | `#EAEAEA` | 1px structural dividers, form inputs, and card outlines. |
+| **Muted Text** | `#888888` | Table column headers, timestamps, and secondary captions. |
+| **Body Text** | `#333333` | Ledger rows, filter labels, and descriptive copy. |
+| **Primary Ink** | `#111111` | Headings, KPI figures, and primary action buttons. |
+| **Chart Grayscale Ramp** | `#111111` $\rightarrow$ `#D8D8D8` | 7-step monochrome palette (`#111111`, `#333333`, `#555555`, `#777777`, `#999999`, `#BBBBBB`, `#D8D8D8`) for doughnut and bar charts. |
 
 ---
 
 ## REST API Reference
 
-All requests and responses use `application/json;charset=UTF-8`.
+All endpoints accept and return `application/json;charset=UTF-8`.
 
-### Expense Management (`/api/expenses`)
-
-| Method | Endpoint | Query Parameters | Description | Status Codes |
+### Expenses (`/api/expenses`)
+| Method | Endpoint | Query Parameters | Description | Responses |
 | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/expenses` | `search`, `category`, `paymentMethod`, `month`, `startDate`, `endDate`, `sortBy`, `order` | Retrieve all transactions with multi-predicate filtering and sorting (`date` \| `amount`, `asc` \| `desc`). | `200 OK`, `400 Bad Request` |
-| `GET` | `/api/expenses/{id}` | None | Retrieve a single transaction by ID. | `200 OK`, `404 Not Found` |
-| `POST` | `/api/expenses` | None | Create a new transaction. Category is auto-assigned if omitted. | `201 Created`, `400 Bad Request` |
-| `PUT` | `/api/expenses/{id}` | None | Update an existing transaction. Preserves category if omitted. | `200 OK`, `400 Bad Request`, `404 Not Found` |
-| `DELETE` | `/api/expenses/{id}` | None | Delete a transaction by ID. | `204 No Content`, `404 Not Found` |
+| `GET` | `/api/expenses` | `search`, `category`, `paymentMethod`, `month`, `startDate`, `endDate`, `sortBy` (`date`\|`amount`), `order` (`asc`\|`desc`) | List transactions with combined filtering and sorting. | `200`, `400` |
+| `GET` | `/api/expenses/{id}` | — | Fetch a single transaction by ID. | `200`, `404` |
+| `POST` | `/api/expenses` | — | Create a transaction (auto-categorizes if `category` is `null`). | `201`, `400` |
+| `PUT` | `/api/expenses/{id}` | — | Update a transaction (retains existing category if omitted). | `200`, `400`, `404` |
+| `DELETE` | `/api/expenses/{id}` | — | Delete a transaction by ID. | `204`, `404` |
 
-#### Sample Expense Request Body:
+**Example `POST /api/expenses` Request**:
 ```json
 {
   "description": "Starbucks coffee iced latte",
@@ -355,27 +361,25 @@ All requests and responses use `application/json;charset=UTF-8`.
 ```
 
 ### Analytics & Reports (`/api/analytics`)
-
-| Method | Endpoint | Query Parameters | Description | Status Codes |
+| Method | Endpoint | Query Parameters | Description | Responses |
 | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/analytics/summary` | None | Overall total, current-month total, highest expense, and average transaction. | `200 OK` |
-| `GET` | `/api/analytics/categories` | None | Complete 9-category breakdown with totals, counts, averages, and percentage shares. | `200 OK` |
-| `GET` | `/api/analytics/highest-lowest`| None | Maximum transaction, minimum transaction, overall mean, and Top 5 highest expenses. | `200 OK` |
-| `GET` | `/api/analytics/unusual` | None | List of expenses exceeding twice their category average ($N \ge 2$). | `200 OK` |
-| `GET` | `/api/analytics/insights` | None | Rule-based natural language insights, budget alerts, and anomaly flags. | `200 OK` |
-| `GET` | `/api/analytics/monthly` | `month` (e.g. `2026-11`) | Monthly summary, MoM shift %, daily burn rate, breakdown, and 6-month historical trend (also `/monthly-report`). | `200 OK`, `400 Bad Request` |
+| `GET` | `/api/analytics/summary` | — | Overall total, current-month total, highest expense, and average spend. | `200` |
+| `GET` | `/api/analytics/categories` | — | Breakdown across all 9 categories (totals, counts, averages, `%` share). | `200` |
+| `GET` | `/api/analytics/highest-lowest` | — | Max expense, min expense, overall mean, and Top 5 expenses. | `200` |
+| `GET` | `/api/analytics/unusual` | — | Transactions exceeding `2x` their category average ($N \ge 2$). | `200` |
+| `GET` | `/api/analytics/insights` | — | Dynamic natural-language spending insights and budget alerts. | `200` |
+| `GET` | `/api/analytics/monthly` | `month` (e.g., `2026-11`) | Monthly totals, MoM `%` change, daily burn rate, and 6-month trend *(alias: `/monthly-report`)*. | `200`, `400` |
 
-### Budget Management (`/api/budgets`)
-
-| Method | Endpoint | Query Parameters | Description | Status Codes |
+### Budgets (`/api/budgets`)
+| Method | Endpoint | Query Parameters | Description | Responses |
 | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/budgets` | `month` (e.g. `2026-11`) | List all category budgets for the specified month with utilization progress. | `200 OK` |
-| `GET` | `/api/budgets/{id}` | None | Get a specific budget by ID. | `200 OK`, `404 Not Found` |
-| `POST` | `/api/budgets` | None | Create a new category budget limit. Enforces uniqueness. | `201 Created`, `400 Bad Request`, `409 Conflict` |
-| `PUT` | `/api/budgets/{id}` | None | Update an existing budget's limit or period. | `200 OK`, `400 Bad Request`, `404 Not Found`, `409 Conflict` |
-| `DELETE` | `/api/budgets/{id}` | None | Delete a budget limit (associated expenses are retained). | `204 No Content`, `404 Not Found` |
+| `GET` | `/api/budgets` | `month` (e.g., `2026-11`) | List category budgets for the given month with live utilization metrics. | `200` |
+| `GET` | `/api/budgets/{id}` | — | Fetch a single budget record by ID. | `200`, `404` |
+| `POST` | `/api/budgets` | — | Create a monthly category budget (enforces uniqueness). | `201`, `400`, `409` |
+| `PUT` | `/api/budgets/{id}` | — | Update an existing budget limit or period. | `200`, `400`, `404`, `409` |
+| `DELETE` | `/api/budgets/{id}` | — | Remove a budget cap (underlying expenses are preserved). | `204`, `404` |
 
-#### Sample Structured Error Response:
+**Example Validation Error Response (`HTTP 400 Bad Request`)**:
 ```json
 {
   "timestamp": "2026-11-24T20:55:22.9057793",
@@ -400,117 +404,38 @@ All requests and responses use `application/json;charset=UTF-8`.
 
 ---
 
-## Windows Setup Instructions
+## Testing & Verification
 
-### Prerequisites
-1. **Operating System**: Windows 10 / 11 (64-bit).
-2. **Java Development Kit**: JDK 26 installed and accessible in the system path.
-   - Verify by executing in PowerShell:
-     ```powershell
-     java -version
-     ```
-     *Output must indicate `openjdk version "26"` or higher.*
-3. **Git**: Installed for version control.
+The project includes **76 automated tests** covering business logic, edge-case boundaries, REST serialization, and full Spring Boot integration using an isolated in-memory H2 profile.
 
-### Clone the Repository
-```powershell
-git clone https://github.com/<your-username>/Smart-Expense-Analyzer.git
-cd Smart-Expense-Analyzer
-```
-
----
-
-## Execution Instructions
-
-The project includes an embedded Maven Wrapper (`mvnw.cmd`) configured with `distributionType=only-script`. No pre-installed Maven is required.
-
-### 1. Launch the Application
-Open PowerShell and run:
-```powershell
-cd backend
-.\mvnw.cmd spring-boot:run
-```
-
-Alternatively, build and run the packaged executable JAR:
-```powershell
-cd backend
-.\mvnw.cmd package -DskipTests
-java -jar target/smart-expense-analyzer-1.0.0-SNAPSHOT.jar
-```
-
-### 2. Access the Application
-Once the terminal displays `Tomcat started on port 8080 (http)`:
-- **Web Dashboard**: Open [http://localhost:8080/](http://localhost:8080/) in any modern browser (Chrome, Edge, Firefox).
-- **H2 Database Console**: Open [http://localhost:8080/h2-console](http://localhost:8080/h2-console).
-  - **JDBC URL**: `jdbc:h2:file:C:\Users\<YourUsername>/.smart-expense-analyzer/db`
-  - **User Name**: `sa`
-  - **Password**: *(leave blank)*
-
----
-
-## Testing Instructions
-
-The test suite covers unit logic, edge cases, numerical precision, and MockMvc REST endpoints.
-
-### Execute All Tests
-In PowerShell, navigate to the `backend` directory and execute:
+### Run the Test Suite
 ```powershell
 cd backend
 .\mvnw.cmd test
 ```
 
-### What Is Tested:
-1. **`CategorizationServiceTest` (26 tests)**:
-   - Word boundaries (`\b`): verifies `"Business lunch"` is not matched as `"bus"`, `"Automobile"` is not matched as `"auto"`, etc.
-   - Precedence: verifies `GROCERIES` > `SHOPPING`, `GROCERIES` > `FOOD`, `FOOD` > `TRANSPORTATION`, etc.
-   - Case-insensitivity: uppercase, mixed-case, and lowercase variants.
-   - Fallbacks: null, blank, whitespace, and unknown keywords map to `OTHERS`.
-2. **`AnalyticsServiceTest` (6 tests)**:
-   - Empty dataset safety: verifies zero values and no `ArithmeticException` or `NoSuchElementException`.
-   - Monetary precision: repeating decimal averages (e.g. $\frac{50}{3} \to 16.67$) maintain exact 2-decimal scale.
-   - Unusual spending: flags strictly $> 2\times$ average only when category count $N \ge 2$; verifies boundary cases.
-   - Extrema and Top 5 descending ordering.
-   - Rule-based insights generation and budget warning alerts.
-3. **`ReportServiceTest` (7 tests)**:
-   - Zero-denominator guard: verifies previous month total 0 yields strictly `null` for MoM change.
-   - MoM percentage calculation for positive, negative, and 100% reduction scenarios.
-   - Daily average expenditure for 31-day months, 29-day leap February, 28-day non-leap February, and current ongoing month.
-   - Historical trend 6-month array generation.
-4. **`BudgetServiceTest` (7 tests)**:
-   - Status thresholds: `79.99%` (Within Budget), `80.00%` (Approaching Limit), `99.99%` (Approaching Limit), `100.00%` (Approaching Limit), `100.01%` (Exceeded).
-   - Remaining amounts: positive, exactly zero, and negative values.
-   - Duplicate prevention (`DuplicateResourceException` $\to 409$).
-   - Missing entity handling (`ResourceNotFoundException` $\to 404$).
-5. **`ExpenseServiceTest` (6 tests)**:
-   - Automatic category assignment on null request category.
-   - Preservation of manual category overrides during edits.
-   - Multi-predicate filtering, sorting, invalid sort parameter validation, and BigDecimal scale normalization.
-6. **Controller Tests (`ExpenseControllerTest`, `AnalyticsControllerTest`, `BudgetControllerTest`) (19 tests)**:
-   - MockMvc endpoint testing, JSON payload validation, HTTP status codes, and exception handler serialization.
-7. **`SmartExpenseAnalyzerIntegrationTest` (5 tests)**:
-   - Full `@SpringBootTest` context verification with isolated H2 database: `DataSeeder` completeness & idempotency, 400/404/405/409 handling, and full expense CRUD lifecycle.
+### Test Coverage Breakdown
+- **`CategorizationServiceTest` (26 tests)**: Validates `\b` word boundaries, top-down category precedence, case insensitivity, and fallback handling for blank/unknown inputs.
+- **`AnalyticsServiceTest` (6 tests)**: Verifies empty-dataset safety, `BigDecimal` repeating-decimal rounding (e.g., $50 / 3 \rightarrow 16.67$), anomaly thresholds ($N \ge 2$), Top 5 ordering, and insight generation.
+- **`ReportServiceTest` (7 tests)**: Tests MoM zero-denominator `null` safety, positive/negative shifts, and daily burn calculations across 28-, 29-, 30-, and 31-day months.
+- **`BudgetServiceTest` (7 tests)**: Verifies exact threshold transitions (`79.99%` $\rightarrow$ `80.00%` $\rightarrow$ `100.00%` $\rightarrow$ `100.01%`), negative remaining balances, and `409`/`404` exceptions.
+- **`ExpenseServiceTest` (6 tests)**: Tests auto-categorization, manual override preservation, multi-predicate filtering, sorting validation, and scale normalization.
+- **Controller MockMvc Tests (19 tests)**: `ExpenseControllerTest`, `AnalyticsControllerTest`, and `BudgetControllerTest` verify HTTP status codes, JSON contracts, and `@RestControllerAdvice` error payloads.
+- **`SmartExpenseAnalyzerIntegrationTest` (5 tests)**: End-to-end `@SpringBootTest` verification of `DataSeeder` idempotency, error status codes (`400`, `404`, `405`, `409`), and full transaction CRUD persistence.
 
-**Test Summary**: **76 tests executed, 0 failures, 0 errors, 0 skipped.**
+**Latest Result**: `76 tests run, 0 failures, 0 errors, 0 skipped.`
 
 ---
 
-## Reset Database & Demo Data Procedure
+## Resetting the Database & Demo Data
 
-The application automatically seeds realistic Indian Rupee (INR) transactions across 4 months and 5 budgets on initial launch if the database is empty:
-```java
-if (expenseRepository.count() == 0) { ... seed ... }
-```
+To wipe custom entries and restore the clean initial dataset (32 INR transactions across 4 months + 5 active budgets):
 
-If you wish to clear all custom transactions and restore the clean initial demo dataset:
-
-### Step-by-Step Reset:
-1. **Stop the running application**:
-   In PowerShell, press `Ctrl+C` or execute:
+1. **Stop the running backend server** (`Ctrl + C` in the active terminal, or via PowerShell):
    ```powershell
    Stop-Process -Name java -Force -ErrorAction SilentlyContinue
    ```
-2. **Delete the H2 database files**:
-   Execute in PowerShell:
+2. **Delete the local H2 database files**:
    ```powershell
    Remove-Item -Path "$env:USERPROFILE\.smart-expense-analyzer\db.*" -Force
    ```
@@ -519,39 +444,20 @@ If you wish to clear all custom transactions and restore the clean initial demo 
    cd backend
    .\mvnw.cmd spring-boot:run
    ```
-4. **Result**:
-   The `DataSeeder` detects `expenseRepository.count() == 0` and automatically populates:
-   - 32 realistic INR transactions across all 9 categories and 4 payment methods spanning August through November 2026.
-   - 5 active monthly budgets for the current month (`Food`, `Groceries`, `Transportation`, `Bills & Utilities`, `Entertainment`).
-
----
-
-## Verification Results
-
-| Milestone | Verified Criterion | Status |
-| :--- | :--- | :---: |
-| **Phase 1** | Java 26, Maven Wrapper 3.3.4, persistent file-based H2, Spring Boot 4.0.10 application startup. | **PASS** |
-| **Phase 2** | `Expense` and `Budget` entities, precision 12 scale 2 `BigDecimal`, unique budget constraint, idempotent `DataSeeder`. | **PASS** |
-| **Phase 3** | Rule-based categorization, multi-predicate filter/sort, MoM zero-denominator guard, budget status boundaries. | **PASS** |
-| **Phase 4** | 16/16 REST endpoints, `@Valid` bean validation, `@RestControllerAdvice` RFC 7807 error format. | **PASS** |
-| **Phase 5** | Responsive Single-Page Application, 5 views, Chart.js monochromatic visualizations, zero CDN dependencies. | **PASS** |
-| **Phase 6** | 76/76 JUnit 5 tests passing, live server end-to-end integration verified, full documentation completed. | **PASS** |
+   `DataSeeder` will detect an empty `expenses` table and automatically re-seed the initial demo records.
 
 ---
 
 ## Future Enhancements
 
-- **Export & Reporting**: Generate downloadable monthly PDF expenditure statements and CSV audit exports.
-- **Multi-Currency Support**: Exchange rate integration for real-time conversion between INR, USD, EUR, and GBP.
-- **Receipt OCR Parsing**: Client-side optical character recognition (via WebAssembly Tesseract) for scanning receipt photos into expense records.
-- **Recurring Subscription Tracker**: Predictive detection of recurring billing cycles (e.g. Netflix, Spotify, broadband) with renewal reminders.
-- **Desktop Application Packaging**: Packaging via `jpackage` into a self-contained Windows `.msi` installer.
+- **Statement Exports**: Generate downloadable monthly PDF expenditure statements and CSV audit logs.
+- **Multi-Currency Conversion**: Support real-time conversion across INR, USD, EUR, and GBP.
+- **Client-Side Receipt OCR**: Extract merchant descriptions and totals from receipt photos using WebAssembly Tesseract.
+- **Recurring Subscription Detection**: Identify monthly billing cycles (e.g., streaming, broadband) and surface upcoming renewal alerts.
+- **Native Desktop Packaging**: Bundle a standalone Windows `.msi` installer using `jpackage`.
 
 ---
 
 ## License
 
-This project is developed under the MIT License. Designed and built strictly according to master software engineering specifications.
-=======
-# Smart-expense-tracker
->>>>>>> b9fe26840794dea288bc5da5caed72c872f563e7
+Released under the **MIT License**.

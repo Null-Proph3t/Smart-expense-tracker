@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Smart Expense Pattern Analyzer
 
 A robust, enterprise-grade personal financial analytics platform engineered to automatically parse, categorize, analyze, and visualize daily expenditures with mathematical precision and actionable intelligence.
@@ -551,3 +552,6 @@ If you wish to clear all custom transactions and restore the clean initial demo 
 ## License
 
 This project is developed under the MIT License. Designed and built strictly according to master software engineering specifications.
+=======
+# Smart-expense-tracker
+>>>>>>> b9fe26840794dea288bc5da5caed72c872f563e7

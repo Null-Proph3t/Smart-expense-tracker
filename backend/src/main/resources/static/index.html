@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Expense Pattern Analyzer</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23111111'/%3E%3Crect x='3' y='9' width='2' height='4' fill='%23ffffff'/%3E%3Crect x='7' y='5' width='2' height='8' fill='%23ffffff'/%3E%3Crect x='11' y='3' width='2' height='10' fill='%23ffffff'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+
+<div class="app-container">
+  <!-- =====================================================================
+       Sidebar Navigation
+       ===================================================================== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-title">Expense Analyzer</div>
+      <div class="brand-subtitle">Pattern & Analytics Engine</div>
+    </div>
+
+    <ul class="nav-menu">
+      <li class="nav-item">
+        <button class="nav-link is-active" data-nav="dashboard">
+          <span>Overview</span>
+          <span>Dashboard</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-nav="transactions">
+          <span>Ledger</span>
+          <span>Transactions</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-nav="analytics">
+          <span>Metrics</span>
+          <span>Analytics</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-nav="reports">
+          <span>Trends</span>
+          <span>Monthly Reports</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-nav="budget">
+          <span>Limits</span>
+          <span>Budgets</span>
+        </button>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div>Local H2 Database</div>
+      <div style="margin-top: 0.25rem;">100% Offline Mode</div>
+    </div>
+  </aside>
+
+  <!-- =====================================================================
+       Main Content Area
+       ===================================================================== -->
+  <main class="main-content">
+
+    <!-- ===================================================================
+         VIEW 1: DASHBOARD
+         =================================================================== -->
+    <section id="view-dashboard" class="view-section is-active">
+      <header class="view-header">
+        <div>
+          <h1 class="view-title">Dashboard</h1>
+          <p class="view-subtitle">High-level financial KPIs, patterns, and recent activity</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" data-action="open-add-expense">+ Add Expense</button>
+        </div>
+      </header>
+
+      <!-- 4 KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Expenses</div>
+          <div class="kpi-value" id="kpi-total-expenses">₹0.00</div>
+          <div class="kpi-subtext">Cumulative spending across all time</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">This Month's Spending</div>
+          <div class="kpi-value" id="kpi-this-month">₹0.00</div>
+          <div class="kpi-subtext">Current calendar month</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Highest Expense</div>
+          <div class="kpi-value" id="kpi-highest-expense">₹0.00</div>
+          <div class="kpi-subtext">Peak individual transaction</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Average Transaction</div>
+          <div class="kpi-value" id="kpi-average-transaction">₹0.00</div>
+          <div class="kpi-subtext">Mean transaction value</div>
+        </div>
+      </div>
+
+      <!-- Overview Charts Grid -->
+      <div class="charts-grid-2">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h2 class="chart-heading">Category Spending Breakdown</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="dashboard-category-chart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <h2 class="chart-heading">Multi-Month Spending Trend</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="dashboard-trend-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Insights & Recent Transactions Grid -->
+      <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.25rem;">
+        <div class="card">
+          <div class="card-title">Automated Insights &amp; Unusual Spending</div>
+          <ul id="dashboard-insights-list" class="insights-list" style="margin-top: 0.75rem;">
+            <li class="empty-state">Loading insights...</li>
+          </ul>
+          <div id="dashboard-unusual-container"></div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <div class="card-title" style="margin-bottom: 0;">Recent Transactions</div>
+            <button class="btn btn-secondary btn-sm" data-nav-target="transactions">View All &rarr;</button>
+          </div>
+          <div class="table-container" style="border: none;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th>Payment</th>
+                  <th class="text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-recent-tbody">
+                <tr><td colspan="5" class="empty-state">Loading transactions...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         VIEW 2: TRANSACTIONS
+         =================================================================== -->
+    <section id="view-transactions" class="view-section">
+      <header class="view-header">
+        <div>
+          <h1 class="view-title">Transactions Ledger</h1>
+          <p class="view-subtitle">Search, filter, edit, and sort recorded expenses</p>
+        </div>
+        <div class="header-actions">
+          <span id="tx-count-display" style="font-size: 0.8125rem; color: var(--ink-muted); margin-right: 0.5rem;">0 transaction(s)</span>
+          <button class="btn btn-primary" data-action="open-add-expense">+ Add Expense</button>
+        </div>
+      </header>
+
+      <!-- Multi-Filter Bar -->
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label for="tx-search">Search Description</label>
+          <input type="text" id="tx-search" placeholder="Type keyword...">
+        </div>
+        <div class="filter-group">
+          <label for="tx-filter-category">Category</label>
+          <select id="tx-filter-category">
+            <option value="">All Categories</option>
+            <option value="FOOD">Food</option>
+            <option value="TRANSPORTATION">Transportation</option>
+            <option value="SHOPPING">Shopping</option>
+            <option value="ENTERTAINMENT">Entertainment</option>
+            <option value="HEALTHCARE">Healthcare</option>
+            <option value="EDUCATION">Education</option>
+            <option value="GROCERIES">Groceries</option>
+            <option value="BILLS_AND_UTILITIES">Bills & Utilities</option>
+            <option value="OTHERS">Others</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="tx-filter-payment">Payment Method</label>
+          <select id="tx-filter-payment">
+            <option value="">All Methods</option>
+            <option value="UPI">UPI</option>
+            <option value="CARD">Card</option>
+            <option value="CASH">Cash</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="tx-filter-month">Month</label>
+          <input type="month" id="tx-filter-month">
+        </div>
+        <div class="filter-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem;">
+          <div>
+            <label for="tx-filter-start-date">From</label>
+            <input type="date" id="tx-filter-start-date">
+          </div>
+          <div>
+            <label for="tx-filter-end-date">To</label>
+            <input type="date" id="tx-filter-end-date">
+          </div>
+        </div>
+        <div class="filter-group" style="display: flex; flex-direction: row; gap: 0.35rem;">
+          <div>
+            <label for="tx-sort-by">Sort</label>
+            <select id="tx-sort-by">
+              <option value="date">Date</option>
+              <option value="amount">Amount</option>
+            </select>
+          </div>
+          <div>
+            <label for="tx-sort-order">Order</label>
+            <select id="tx-sort-order">
+              <option value="desc">Desc</option>
+              <option value="asc">Asc</option>
+            </select>
+          </div>
+          <button class="btn btn-secondary" id="tx-btn-reset" title="Reset Filters" style="align-self: flex-end;">Reset</button>
+        </div>
+      </div>
+
+      <!-- Transactions Ledger Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Payment Method</th>
+              <th class="text-right">Amount</th>
+              <th>Notes</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="transactions-tbody">
+            <tr><td colspan="7" class="empty-state">Loading transactions...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         VIEW 3: ANALYTICS
+         =================================================================== -->
+    <section id="view-analytics" class="view-section">
+      <header class="view-header">
+        <div>
+          <h1 class="view-title">Spending Analytics</h1>
+          <p class="view-subtitle">Comprehensive category distribution, averages, and transaction extrema</p>
+        </div>
+      </header>
+
+      <!-- Extrema Cards -->
+      <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.75rem;">
+        <div class="kpi-card">
+          <div class="kpi-label">Highest Expense</div>
+          <div class="kpi-value" id="analytics-highest-val">₹0.00</div>
+          <div class="kpi-subtext" id="analytics-highest-desc">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Lowest Expense</div>
+          <div class="kpi-value" id="analytics-lowest-val">₹0.00</div>
+          <div class="kpi-subtext" id="analytics-lowest-desc">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Overall Average Transaction</div>
+          <div class="kpi-value" id="analytics-avg-val">₹0.00</div>
+          <div class="kpi-subtext">Across all recorded transactions</div>
+        </div>
+      </div>
+
+      <!-- Category Table & Distribution Chart -->
+      <div class="charts-grid-2">
+        <div class="card">
+          <div class="card-title">Category-Wise Breakdown</div>
+          <div class="table-container" style="border: none; margin-top: 0.5rem;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th class="text-center">Transactions</th>
+                  <th class="text-right">Total Spent</th>
+                  <th class="text-right">Avg / Tx</th>
+                  <th class="text-right">% Share</th>
+                </tr>
+              </thead>
+              <tbody id="analytics-category-tbody">
+                <tr><td colspan="5" class="empty-state">Loading categories...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h2 class="chart-heading">Category Expenditure Ranking</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="analytics-category-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top 5 Highest Transactions -->
+      <div class="card" style="margin-top: 1.25rem;">
+        <div class="card-title">Top 5 Highest Individual Expenses</div>
+        <div class="table-container" style="border: none; margin-top: 0.5rem;">
+          <table>
+            <thead>
+              <tr>
+                <th class="text-center" style="width: 60px;">Rank</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>Payment Method</th>
+                <th class="text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody id="analytics-top5-tbody">
+              <tr><td colspan="6" class="empty-state">Loading top expenses...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         VIEW 4: MONTHLY REPORTS
+         =================================================================== -->
+    <section id="view-reports" class="view-section">
+      <header class="view-header">
+        <div>
+          <h1 class="view-title">Monthly Reports</h1>
+          <p class="view-subtitle">Calendar month performance, daily averages, and MoM analysis</p>
+        </div>
+        <div class="header-actions">
+          <label for="reports-month-select" style="margin-bottom: 0; margin-right: 0.5rem;">Select Month:</label>
+          <input type="month" id="reports-month-select" style="width: 170px;">
+        </div>
+      </header>
+
+      <!-- Monthly KPIs Grid (6 Cards) -->
+      <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1.75rem;">
+        <div class="kpi-card">
+          <div class="kpi-label">Monthly Expenditure</div>
+          <div class="kpi-value" id="rep-total">₹0.00</div>
+          <div class="kpi-subtext">Total spent in selected month</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Transaction Count</div>
+          <div class="kpi-value" id="rep-count">0</div>
+          <div class="kpi-subtext">Number of entries recorded</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Average Transaction</div>
+          <div class="kpi-value" id="rep-avg">₹0.00</div>
+          <div class="kpi-subtext">Per transaction in this month</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Peak Transaction</div>
+          <div class="kpi-value" id="rep-highest">₹0.00</div>
+          <div class="kpi-subtext">Highest individual expenditure</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Average Daily Expenditure</div>
+          <div class="kpi-value" id="rep-daily-avg">₹0.00</div>
+          <div class="kpi-subtext">Per active day of the month</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Month-over-Month (MoM)</div>
+          <div class="kpi-value" id="rep-mom">N/A</div>
+          <div class="kpi-subtext">Change vs. previous month</div>
+        </div>
+      </div>
+
+      <!-- Monthly Breakdown Table & Historical Trend Chart -->
+      <div class="charts-grid-2">
+        <div class="card">
+          <div class="card-title">Category Breakdown for Month</div>
+          <div class="table-container" style="border: none; margin-top: 0.5rem;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th class="text-center">Count</th>
+                  <th class="text-right">Total Spent</th>
+                  <th class="text-right">% Share</th>
+                </tr>
+              </thead>
+              <tbody id="reports-category-tbody">
+                <tr><td colspan="4" class="empty-state">Loading breakdown...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <h2 class="chart-heading">Historical Monthly Spending Trend</h2>
+          </div>
+          <div class="chart-container">
+            <canvas id="reports-trend-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         VIEW 5: BUDGET
+         =================================================================== -->
+    <section id="view-budget" class="view-section">
+      <header class="view-header">
+        <div>
+          <h1 class="view-title">Monthly Budgets</h1>
+          <p class="view-subtitle">Track category limits, actual expenditures, and threshold utilization</p>
+        </div>
+        <div class="header-actions">
+          <label for="budget-month-select" style="margin-bottom: 0; margin-right: 0.5rem;">Target Month:</label>
+          <input type="month" id="budget-month-select" style="width: 170px;">
+        </div>
+      </header>
+
+      <!-- Budget Configuration Form Card -->
+      <div class="card" style="margin-bottom: 1.75rem;">
+        <div class="card-title" id="budget-form-heading">Set Category Budget</div>
+        <div class="error-banner" id="budget-form-error"></div>
+        <form id="budget-form" style="margin-top: 0.75rem; display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 200px;">
+            <label for="budget-form-category">Category</label>
+            <select id="budget-form-category" required>
+              <option value="FOOD">Food</option>
+              <option value="GROCERIES">Groceries</option>
+              <option value="TRANSPORTATION">Transportation</option>
+              <option value="SHOPPING">Shopping</option>
+              <option value="ENTERTAINMENT">Entertainment</option>
+              <option value="HEALTHCARE">Healthcare</option>
+              <option value="EDUCATION">Education</option>
+              <option value="BILLS_AND_UTILITIES">Bills & Utilities</option>
+              <option value="OTHERS">Others</option>
+            </select>
+          </div>
+          <div style="flex: 1; min-width: 180px;">
+            <label for="budget-form-limit">Monthly Limit (₹)</label>
+            <input type="number" id="budget-form-limit" min="0.01" step="0.01" placeholder="e.g. 5000.00" required>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary" id="budget-form-submit-btn">Save Budget</button>
+            <button type="button" class="btn btn-secondary" id="budget-form-cancel-btn" style="display: none;">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Budget Utilization Table -->
+      <div class="card">
+        <div class="card-title">Budget Utilization Ledger</div>
+        <div class="table-container" style="border: none; margin-top: 0.5rem;">
+          <table>
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th class="text-right">Monthly Limit</th>
+                <th class="text-right">Actual Spent</th>
+                <th class="text-right">Remaining</th>
+                <th>Utilization</th>
+                <th>Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="budget-tbody">
+              <tr><td colspan="7" class="empty-state">Loading budgets...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- =========================================================================
+     SHARED MODAL: Add / Edit Expense
+     ========================================================================= -->
+<div class="modal-backdrop" id="expense-modal">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3 class="modal-title" id="expense-modal-title">Add New Expense</h3>
+      <button class="modal-close" id="expense-modal-close" type="button">&times;</button>
+    </div>
+    <form id="expense-form">
+      <div class="modal-body">
+        <div class="error-banner" id="expense-form-error"></div>
+        <div class="form-grid">
+          <div class="form-group-full">
+            <label for="exp-desc">Description *</label>
+            <input type="text" id="exp-desc" maxlength="200" placeholder="e.g. Swiggy dinner, Uber to airport" required>
+          </div>
+          <div>
+            <label for="exp-amount">Amount (₹) *</label>
+            <input type="number" id="exp-amount" min="0.01" step="0.01" placeholder="0.01" required>
+          </div>
+          <div>
+            <label for="exp-date">Date *</label>
+            <input type="date" id="exp-date" required>
+          </div>
+          <div>
+            <label for="exp-category">Category (Leave blank for Auto-Detect)</label>
+            <select id="exp-category">
+              <option value="">Auto-Detect via Keywords</option>
+              <option value="FOOD">Food</option>
+              <option value="TRANSPORTATION">Transportation</option>
+              <option value="SHOPPING">Shopping</option>
+              <option value="ENTERTAINMENT">Entertainment</option>
+              <option value="HEALTHCARE">Healthcare</option>
+              <option value="EDUCATION">Education</option>
+              <option value="GROCERIES">Groceries</option>
+              <option value="BILLS_AND_UTILITIES">Bills & Utilities</option>
+              <option value="OTHERS">Others</option>
+            </select>
+          </div>
+          <div>
+            <label for="exp-payment">Payment Method *</label>
+            <select id="exp-payment" required>
+              <option value="UPI">UPI</option>
+              <option value="CARD">Card</option>
+              <option value="CASH">Cash</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div class="form-group-full">
+            <label for="exp-notes">Notes (Optional)</label>
+            <textarea id="exp-notes" rows="2" maxlength="500" placeholder="Optional context or memo..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="expense-modal-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="expense-modal-submit">Save Expense</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =========================================================================
+     SCRIPTS: Vendored Chart.js UMD followed by ES Modules
+     ========================================================================= -->
+<script src="/js/vendor/chart.umd.min.js"></script>
+
+<script type="module">
+  import { loadDashboard } from '/js/dashboard.js';
+  import { loadTransactions } from '/js/transactions.js';
+  import { loadAnalyticsView, loadMonthlyReportsView } from '/js/reports.js';
+  import { loadBudgetView } from '/js/budget.js';
+
+  const viewLoaders = {
+    'dashboard': loadDashboard,
+    'transactions': loadTransactions,
+    'analytics': loadAnalyticsView,
+    'reports': () => loadMonthlyReportsView(),
+    'budget': loadBudgetView
+  };
+
+  function switchView(viewName) {
+    // 1. Update navigation active state
+    document.querySelectorAll('.nav-link').forEach(link => {
+      if (link.getAttribute('data-nav') === viewName) {
+        link.classList.add('is-active');
+      } else {
+        link.classList.remove('is-active');
+      }
+    });
+
+    // 2. Toggle active section
+    document.querySelectorAll('.view-section').forEach(sec => {
+      if (sec.id === `view-${viewName}`) {
+        sec.classList.add('is-active');
+      } else {
+        sec.classList.remove('is-active');
+      }
+    });
+
+    // 3. Trigger loader
+    if (viewLoaders[viewName]) {
+      viewLoaders[viewName]();
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Nav links click listener
+    document.querySelectorAll('[data-nav]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetView = btn.getAttribute('data-nav');
+        switchView(targetView);
+      });
+    });
+
+    // Shortcut button in Dashboard ("View All ->")
+    document.querySelectorAll('[data-nav-target]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetView = btn.getAttribute('data-nav-target');
+        switchView(targetView);
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

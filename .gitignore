@@ -1,0 +1,57 @@
+# ============================================================
+# Smart Expense Pattern Analyzer — root .gitignore
+# ============================================================
+
+# ----- Build output -----
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# ----- H2 database files (never commit data) -----
+*.db
+*.mv.db
+*.trace.db
+*.lock.db
+.smart-expense-analyzer/
+
+# ----- IDE and editor files -----
+.idea/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+*.code-workspace
+.vscode/settings.json
+
+# ----- OS junk -----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----- Maven local repository (not needed; each dev has ~/.m2) -----
+# Do NOT ignore mvnw, mvnw.cmd, or .mvn/ — they are required by the spec
+
+# ----- Logs -----
+*.log
+logs/
+
+# ----- Temporary files -----
+*.tmp
+*.bak
+*.swp
+*~
+
+# ----- Environment files -----
+.env
+.env.*
+# Additional secrets
+*.pem
+*.key
+credentials.json
+
+# Node dependencies, if introduced later
+node_modules/
